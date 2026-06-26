@@ -1,0 +1,66 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Web.Services;
+using System.Configuration;
+using System.Data.SqlClient;
+public partial class Default2 : System.Web.UI.Page
+{
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!this.IsPostBack)
+        {
+            DataTable dt = this.GetData("SELECT fileid,privillages from addfiles");
+            this.PopulateTreeView(dt, 0, null);
+        }
+    }
+
+    private void PopulateTreeView(DataTable dtParent, int parentId, TreeNode treeNode)
+    {
+        foreach (DataRow row in dtParent.Rows)
+        {
+            TreeNode child = new TreeNode
+            {
+                Text = row["fileid"].ToString(),
+                Value = row["privillages"].ToString()
+            };
+            if (parentId == 0)
+            {
+                TreeView1.Nodes.Add(child);
+                DataTable dtChild = this.GetData("SELECT  fileid from updatefiles WHERE fileid = " + child.Value);
+                PopulateTreeView(dtChild, int.Parse(child.Value), child);
+            }
+            else
+            {
+                treeNode.ChildNodes.Add(child);
+            }
+        }
+    }
+
+    private DataTable GetData(string query)
+    {
+        DataTable dt = new DataTable();
+        string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
+
+        using (SqlConnection con = new SqlConnection(constr))
+       {
+
+            using (SqlCommand cmd = new SqlCommand(query))
+            {
+                using (SqlDataAdapter sda = new SqlDataAdapter())
+                {
+                    cmd.CommandType = CommandType.Text;
+                   cmd.Connection = con;
+                    sda.SelectCommand = cmd;
+                    sda.Fill(dt);
+                }
+            }
+            return dt;
+        }
+    }
+   
+}
